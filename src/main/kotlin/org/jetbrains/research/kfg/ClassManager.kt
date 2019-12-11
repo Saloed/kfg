@@ -48,7 +48,10 @@ class Package(name: String) {
     }
 }
 
-class ClassManager(jar: JarFile, val config: KfgConfig = KfgConfigBuilder().build()) {
+class ClassManager (
+    jarClasses: Map<String, ClassNode>,
+    val config: KfgConfig = KfgConfigBuilder().build()
+) {
     val value = ValueFactory(this)
     val instruction = InstructionFactory(this)
     val type = TypeFactory(this)
@@ -60,8 +63,10 @@ class ClassManager(jar: JarFile, val config: KfgConfig = KfgConfigBuilder().buil
     private val classNodes = hashMapOf<String, ClassNode>()
     private val classes = hashMapOf<String, Class>()
 
+    constructor(jar: JarFile, config: KfgConfig = KfgConfigBuilder().build())
+            : this(parseJarClasses(jar, config.`package`, config.flags), config)
+
     init {
-        val jarClasses = parseJarClasses(jar, `package`, flags)
         classNodes.putAll(jarClasses)
         jarClasses.forEach { (name, cn) ->
             classes.getOrPut(name) { ConcreteClass(this, cn) }.init()
@@ -81,7 +86,7 @@ class ClassManager(jar: JarFile, val config: KfgConfig = KfgConfigBuilder().buil
         // this is fucked up, but i don't know any other way to do this
         // if `failOnError` option is enabled and we have some failed classes, we need to
         // rebuild all the methods so they will not use invalid instance of ConcreteClass for failing class
-        if (!config.failOnError && failedClasses.isNotEmpty()) {
+        if (!config.ignoreIncorrectClasses && !config.failOnError && failedClasses.isNotEmpty()) {
             val oldClasses = classes.toMap()
             classes.clear()
             for ((name, _) in oldClasses) {

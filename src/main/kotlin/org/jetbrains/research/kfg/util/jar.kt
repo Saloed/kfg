@@ -138,7 +138,7 @@ class JarBuilder(val name: String) {
     }
 }
 
-private fun readClassNode(input: InputStream, flags: Flags = Flags.readAll): ClassNode {
+fun readClassNode(input: InputStream, flags: Flags = Flags.readAll): ClassNode {
     val classReader = ClassReader(input)
     val classNode = ClassNode()
     classReader.accept(classNode, flags.value)

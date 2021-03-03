@@ -209,9 +209,9 @@
 
     <distributionManagement>
         <repository>
-            <id>bintray-vorpal-research-kotlin-maven</id>
-            <name>vorpal-research-kotlin-maven</name>
-            <url>https://api.bintray.com/maven/vorpal-research/kotlin-maven/kfg/;publish=1</url>
+            <id>saloed-github-kfg</id>
+            <name>saloed-github-kfg</name>
+            <url>https://maven.pkg.github.com/Saloed/kfg</url>
         </repository>
     </distributionManagement>
 

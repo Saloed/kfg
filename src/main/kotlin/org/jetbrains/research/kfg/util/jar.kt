@@ -3,14 +3,16 @@ package org.jetbrains.research.kfg.util
 import org.jetbrains.research.kfg.ClassManager
 import org.jetbrains.research.kfg.KfgException
 import org.jetbrains.research.kfg.builder.asm.ClassBuilder
+import org.jetbrains.research.kfg.builder.cfg.LabelFilterer
 import org.jetbrains.research.kfg.ir.Class
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.commons.JSRInlinerAdapter
 import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.FrameNode
+import org.objectweb.asm.tree.MethodNode
 import org.objectweb.asm.util.CheckClassAdapter
 import java.io.*
-import java.net.URLClassLoader
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
@@ -20,7 +22,7 @@ val JarEntry.isClass get() = this.name.endsWith(".class")
 val JarEntry.className get() = this.name.removeSuffix(".class")
 val JarEntry.isManifest get() = this.name == "META-INF/MANIFEST.MF"
 
-val JarFile.classLoader get() = URLClassLoader(arrayOf(File(this.name).toURI().toURL()))
+val JarFile.classLoader get() = File(this.name).classLoader
 
 val ClassNode.hasFrameInfo: Boolean get() {
     var hasInfo = false
@@ -29,6 +31,17 @@ val ClassNode.hasFrameInfo: Boolean get() {
     }
     return hasInfo
 }
+
+internal fun ClassNode.inlineJsrs() {
+    this.methods = methods.map { it.jsrInlined }
+}
+
+internal val MethodNode.jsrInlined: MethodNode
+    get() {
+        val temp = JSRInlinerAdapter(this, access, name, desc, signature, exceptions?.toTypedArray())
+        this.accept(temp)
+        return LabelFilterer(temp).build()
+    }
 
 class ClassReadError(msg: String) : KfgException(msg)
 
@@ -55,15 +68,15 @@ class KfgClassWriter(private val loader: ClassLoader, flags: Flags) : ClassWrite
 
     private fun readClass(type: String) = try {
         java.lang.Class.forName(type.replace('/', '.'), false, loader)
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         throw ClassReadError(e.toString())
     }
 
-    override fun getCommonSuperClass(type1: String, type2: String): String {
+    override fun getCommonSuperClass(type1: String, type2: String): String = try {
         var class1 = readClass(type1)
         val class2 = readClass(type2)
 
-        return when {
+        when {
             class1.isAssignableFrom(class2) -> type1
             class2.isAssignableFrom(class1) -> type2
             class1.isInterface || class2.isInterface -> "java/lang/Object"
@@ -74,6 +87,8 @@ class KfgClassWriter(private val loader: ClassLoader, flags: Flags) : ClassWrite
                 class1.name.replace('.', '/')
             }
         }
+    } catch (e: Throwable) {
+        "java/lang/Object"
     }
 }
 
@@ -141,6 +156,7 @@ private fun ByteArray.toClassNode(): ClassNode {
 }
 
 private fun ClassNode.toByteArray(loader: ClassLoader, flags: Flags = Flags.writeComputeAll): ByteArray {
+    this.inlineJsrs()
     val cw = KfgClassWriter(loader, flags)
     val cca = CheckClassAdapter(cw)
     this.accept(cca)

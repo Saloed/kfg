@@ -8,22 +8,14 @@ import com.abdullin.kthelper.collection.queueOf
 import com.abdullin.kthelper.defaultHashCode
 import com.abdullin.kthelper.logging.log
 import org.jetbrains.research.kfg.ClassManager
-import org.jetbrains.research.kfg.builder.cfg.LabelFilterer
 import org.jetbrains.research.kfg.ir.value.BlockUser
 import org.jetbrains.research.kfg.ir.value.SlotTracker
 import org.jetbrains.research.kfg.ir.value.UsableBlock
 import org.jetbrains.research.kfg.type.Type
 import org.jetbrains.research.kfg.type.TypeFactory
 import org.jetbrains.research.kfg.type.parseMethodDesc
-import org.objectweb.asm.commons.JSRInlinerAdapter
+import org.jetbrains.research.kfg.util.jsrInlined
 import org.objectweb.asm.tree.MethodNode
-
-private val MethodNode.simplified: MethodNode
-    get() {
-        val temp = JSRInlinerAdapter(this, access, name, desc, signature, exceptions?.toTypedArray())
-        this.accept(temp)
-        return LabelFilterer(temp).build()
-    }
 
 data class MethodDesc(val args: Array<Type>, val retval: Type) {
     companion object {
@@ -55,16 +47,18 @@ class Method(cm: ClassManager, node: MethodNode, val `class`: Class)
         private val STATIC_INIT_NAMES = arrayOf("<clinit>")
     }
 
-    val mn = node.simplified
+    val mn = node.jsrInlined
     val desc = MethodDesc.fromDesc(cm.type, node.desc)
     val argTypes get() = desc.args
     val returnType get() = desc.retval
+    private val innerBlocks = arrayListOf<BasicBlock>()
+    private val innerCatches = hashSetOf<CatchBlock>()
     val parameters = mn.parameters?.withIndex()?.map { (index, param) ->
         Parameter(cm, index, param.name, desc.args[index], param.access)
     } ?: listOf()
     val exceptions = mn.exceptions.map { cm[it] }.toSet()
-    val basicBlocks = arrayListOf<BasicBlock>()
-    val catchEntries = hashSetOf<CatchBlock>()
+    val basicBlocks: List<BasicBlock> get() = innerBlocks
+    val catchEntries: Set<CatchBlock> get() = innerCatches
     val slotTracker = SlotTracker(this)
 
     init {
@@ -73,7 +67,7 @@ class Method(cm: ClassManager, node: MethodNode, val `class`: Class)
     }
 
     override val entry: BasicBlock
-        get() = basicBlocks.first { it is BodyBlock && it.predecessors.isEmpty() }
+        get() = innerBlocks.first { it is BodyBlock && it.predecessors.isEmpty() }
 
     val prototype: String
         get() = "$`class`::$name$desc"
@@ -87,22 +81,24 @@ class Method(cm: ClassManager, node: MethodNode, val `class`: Class)
     val bodyBlocks: List<BasicBlock>
         get() {
             val catches = catchBlocks
-            return basicBlocks.filter { it !in catches }.toList()
+            return innerBlocks.filter { it !in catches }.toList()
         }
 
     val catchBlocks: List<BasicBlock>
         get() {
             val catchMap = hashMapOf<BasicBlock, Boolean>()
+            val visited = hashSetOf<BasicBlock>()
             val result = arrayListOf<BasicBlock>()
             val queue = queueOf<BasicBlock>()
             queue.addAll(catchEntries)
             while (queue.isNotEmpty()) {
                 val top = queue.poll()
                 val isCatch = top.predecessors.fold(true) { acc, bb -> acc && catchMap.getOrPut(bb) { false } }
-                if (isCatch) {
+                if (isCatch && top !in visited) {
                     result.add(top)
                     queue.addAll(top.successors)
                     catchMap[top] = true
+                    visited += top
                 }
             }
             return result
@@ -112,15 +108,15 @@ class Method(cm: ClassManager, node: MethodNode, val `class`: Class)
         get() = desc.asmDesc
 
     override val nodes: Set<BasicBlock>
-        get() = basicBlocks.toSet()
+        get() = innerBlocks.toSet()
 
-    fun isEmpty() = basicBlocks.isEmpty()
+    fun isEmpty() = innerBlocks.isEmpty()
     fun isNotEmpty() = !isEmpty()
 
     fun add(bb: BasicBlock) {
-        if (!basicBlocks.contains(bb)) {
+        if (!innerBlocks.contains(bb)) {
             ktassert(!bb.hasParent) { log.error("Block ${bb.name} already belongs to other method") }
-            basicBlocks.add(bb)
+            innerBlocks.add(bb)
             slotTracker.addBlock(bb)
             bb.addUser(this)
             bb.parentUnsafe = this
@@ -128,12 +124,12 @@ class Method(cm: ClassManager, node: MethodNode, val `class`: Class)
     }
 
     fun addBefore(before: BasicBlock, bb: BasicBlock) {
-        if (!basicBlocks.contains(bb)) {
+        if (!innerBlocks.contains(bb)) {
             ktassert(!bb.hasParent) { log.error("Block ${bb.name} already belongs to other method") }
             val index = basicBlocks.indexOf(before)
             ktassert(index >= 0) { log.error("Block ${before.name} does not belong to method $this") }
 
-            basicBlocks.add(index, bb)
+            innerBlocks.add(index, bb)
             slotTracker.addBlock(bb)
             bb.addUser(this)
             bb.parentUnsafe = this
@@ -141,12 +137,12 @@ class Method(cm: ClassManager, node: MethodNode, val `class`: Class)
     }
 
     fun addAfter(after: BasicBlock, bb: BasicBlock) {
-        if (!basicBlocks.contains(bb)) {
+        if (!innerBlocks.contains(bb)) {
             ktassert(!bb.hasParent) { log.error("Block ${bb.name} already belongs to other method") }
             val index = basicBlocks.indexOf(after)
             ktassert(index >= 0) { log.error("Block ${after.name} does not belong to method $this") }
 
-            basicBlocks.add(index + 1, bb)
+            innerBlocks.add(index + 1, bb)
             slotTracker.addBlock(bb)
             bb.addUser(this)
             bb.parentUnsafe = this
@@ -154,12 +150,12 @@ class Method(cm: ClassManager, node: MethodNode, val `class`: Class)
     }
 
     fun remove(block: BasicBlock) {
-        if (basicBlocks.contains(block)) {
+        if (innerBlocks.contains(block)) {
             ktassert(block.parentUnsafe == this) { log.error("Block ${block.name} don't belong to $this") }
-            basicBlocks.remove(block)
+            innerBlocks.remove(block)
 
-            if (block in catchEntries) {
-                catchEntries.remove(block)
+            if (block in innerCatches) {
+                innerCatches.remove(block)
             }
 
             block.removeUser(this)
@@ -168,17 +164,17 @@ class Method(cm: ClassManager, node: MethodNode, val `class`: Class)
     }
 
     fun addCatchBlock(bb: CatchBlock) {
-        require(bb in basicBlocks)
-        catchEntries.add(bb)
+        require(bb in innerBlocks)
+        innerCatches.add(bb)
     }
 
     fun getNext(from: BasicBlock): BasicBlock {
-        val start = basicBlocks.indexOf(from)
-        return basicBlocks[start + 1]
+        val start = innerBlocks.indexOf(from)
+        return innerBlocks[start + 1]
     }
 
-    fun getBlockByLocation(location: Location) = basicBlocks.find { it.location == location }
-    fun getBlockByName(name: String) = basicBlocks.find { it.name.toString() == name }
+    fun getBlockByLocation(location: Location) = innerBlocks.find { it.location == location }
+    fun getBlockByName(name: String) = innerBlocks.find { it.name.toString() == name }
 
     fun print() = buildString {
         appendLine(prototype)
@@ -186,7 +182,7 @@ class Method(cm: ClassManager, node: MethodNode, val `class`: Class)
     }
 
     override fun toString() = prototype
-    override fun iterator() = basicBlocks.iterator()
+    override fun iterator() = innerBlocks.iterator()
 
     override fun hashCode() = defaultHashCode(name, `class`, desc)
     override fun equals(other: Any?): Boolean {
@@ -197,11 +193,11 @@ class Method(cm: ClassManager, node: MethodNode, val `class`: Class)
     }
 
     override fun replaceUsesOf(from: UsableBlock, to: UsableBlock) {
-        (0 until basicBlocks.size)
+        (0 until innerBlocks.size)
                 .filter { basicBlocks[it] == from }
                 .forEach {
-                    basicBlocks[it].removeUser(this)
-                    basicBlocks[it] = to.get()
+                    innerBlocks[it].removeUser(this)
+                    innerBlocks[it] = to.get()
                     to.addUser(this)
                 }
     }

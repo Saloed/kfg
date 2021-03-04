@@ -5,8 +5,9 @@ import org.jetbrains.research.kfg.ir.value.UndefinedName
 import org.jetbrains.research.kfg.ir.value.Value
 import org.jetbrains.research.kfg.type.Type
 
-class SwitchInst(key: Value, type: Type, default: BasicBlock, branches: Map<Value, BasicBlock>) :
+class SwitchInst(id: Int, key: Value, type: Type, default: BasicBlock, branches: Map<Value, BasicBlock>) :
         TerminateInst(
+                id,
                 UndefinedName,
                 type,
                 arrayOf(key, *branches.keys.toTypedArray()),
@@ -29,5 +30,5 @@ class SwitchInst(key: Value, type: Type, default: BasicBlock, branches: Map<Valu
         return sb.toString()
     }
 
-    override fun clone(): Instruction = SwitchInst(key, type, default, branches)
+    override fun clone(): Instruction = SwitchInst(id, key, type, default, branches)
 }

@@ -4,8 +4,8 @@ import org.jetbrains.research.kfg.ir.BasicBlock
 import org.jetbrains.research.kfg.ir.value.*
 import org.jetbrains.research.kfg.type.Type
 
-class PhiInst(name: Name, type: Type, incomings: Map<BasicBlock, Value>)
-    : Instruction(name, type, incomings.values.toTypedArray()), BlockUser {
+class PhiInst(id: Int, name: Name, type: Type, incomings: Map<BasicBlock, Value>)
+    : Instruction(id, name, type, incomings.values.toTypedArray()), BlockUser {
     private val preds = incomings.keys.toTypedArray()
 
     init {
@@ -29,7 +29,7 @@ class PhiInst(name: Name, type: Type, incomings: Map<BasicBlock, Value>)
         return sb.toString()
     }
 
-    override fun clone(): Instruction = PhiInst(name.clone(), type, incomings)
+    override fun clone(): Instruction = PhiInst(id, name.clone(), type, incomings)
 
     override fun replaceUsesOf(from: UsableBlock, to: UsableBlock) {
         (0..preds.lastIndex)

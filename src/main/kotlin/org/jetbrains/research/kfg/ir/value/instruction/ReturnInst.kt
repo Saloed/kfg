@@ -5,8 +5,8 @@ import org.jetbrains.research.kfg.ir.value.Value
 import org.jetbrains.research.kfg.type.Type
 
 class ReturnInst : TerminateInst {
-    constructor(type: Type) : super(UndefinedName, type, arrayOf(), arrayOf())
-    constructor(retval: Value) : super(UndefinedName, retval.type, arrayOf(retval), arrayOf())
+    constructor(id: Int, type: Type) : super(id, UndefinedName, type, arrayOf(), arrayOf())
+    constructor(id: Int, retval: Value) : super(id, UndefinedName, retval.type, arrayOf(retval), arrayOf())
 
     val hasReturnValue: Boolean
         get() = ops.isNotEmpty()
@@ -26,7 +26,7 @@ class ReturnInst : TerminateInst {
     }
 
     override fun clone(): Instruction = when {
-        hasReturnValue -> ReturnInst(returnValue)
-        else -> ReturnInst(type)
+        hasReturnValue -> ReturnInst(id, returnValue)
+        else -> ReturnInst(id, type)
     }
 }

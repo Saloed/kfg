@@ -18,12 +18,12 @@ class FieldLoadInst : Instruction {
             else -> throw InvalidAccessError("Trying to get owner of static field")
         }
 
-    constructor(name: Name, field: Field) : super(name, field.type, arrayOf()) {
+    constructor(id: Int, name: Name, field: Field) : super(id, name, field.type, arrayOf()) {
         this.field = field
         isStatic = true
     }
 
-    constructor(name: Name, owner: Value, field: Field) : super(name, field.type, arrayOf(owner)) {
+    constructor(id: Int, name: Name, owner: Value, field: Field) : super(id, name, field.type, arrayOf(owner)) {
         this.field = field
         isStatic = false
     }
@@ -38,7 +38,7 @@ class FieldLoadInst : Instruction {
     }
 
     override fun clone(): Instruction = when {
-        isStatic -> FieldLoadInst(name.clone(), field)
-        else -> FieldLoadInst(name.clone(), owner, field)
+        isStatic -> FieldLoadInst(id, name.clone(), field)
+        else -> FieldLoadInst(id, name.clone(), owner, field)
     }
 }

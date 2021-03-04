@@ -9,8 +9,8 @@ enum class UnaryOpcode {
     LENGTH
 }
 
-class UnaryInst(name: Name, type: Type, val opcode: UnaryOpcode, obj: Value)
-    : Instruction(name, type, arrayOf(obj)) {
+class UnaryInst(id: Int, name: Name, type: Type, val opcode: UnaryOpcode, obj: Value)
+    : Instruction(id, name, type, arrayOf(obj)) {
 
     val operand: Value
         get() = ops[0]
@@ -22,5 +22,5 @@ class UnaryInst(name: Name, type: Type, val opcode: UnaryOpcode, obj: Value)
         return sb.toString()
     }
 
-    override fun clone(): Instruction = UnaryInst(name.clone(), type, opcode, operand)
+    override fun clone(): Instruction = UnaryInst(id, name.clone(), type, opcode, operand)
 }

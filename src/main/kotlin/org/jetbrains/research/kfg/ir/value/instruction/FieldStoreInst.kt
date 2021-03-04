@@ -9,14 +9,14 @@ class FieldStoreInst : Instruction {
     val field: Field
     val isStatic: Boolean
 
-    constructor(field: Field, value: Value)
-            : super(UndefinedName, field.type, arrayOf(value)) {
+    constructor(id: Int, field: Field, value: Value)
+            : super(id, UndefinedName, field.type, arrayOf(value)) {
         this.field = field
         isStatic = true
     }
 
-    constructor(owner: Value, field: Field, value: Value)
-            : super(UndefinedName, field.type, arrayOf(owner, value)) {
+    constructor(id: Int, owner: Value, field: Field, value: Value)
+            : super(id, UndefinedName, field.type, arrayOf(owner, value)) {
         this.field = field
         isStatic = false
     }
@@ -42,7 +42,7 @@ class FieldStoreInst : Instruction {
     }
 
     override fun clone(): Instruction = when {
-        isStatic -> FieldStoreInst(field, value)
-        else -> FieldStoreInst(owner, field, value)
+        isStatic -> FieldStoreInst(id, field, value)
+        else -> FieldStoreInst(id, owner, field, value)
     }
 }

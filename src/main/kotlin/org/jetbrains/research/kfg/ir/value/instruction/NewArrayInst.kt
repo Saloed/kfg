@@ -6,7 +6,7 @@ import org.jetbrains.research.kfg.ir.value.Value
 import org.jetbrains.research.kfg.type.ArrayType
 import org.jetbrains.research.kfg.type.Type
 
-class NewArrayInst(name: Name, type: Type, dimensions: Array<Value>): Instruction(name, type, dimensions) {
+class NewArrayInst(id: Int, name: Name, type: Type, dimensions: Array<Value>): Instruction(id, name, type, dimensions) {
     val component: Type
 
     val dimensions: List<Value>
@@ -32,5 +32,5 @@ class NewArrayInst(name: Name, type: Type, dimensions: Array<Value>): Instructio
         }
         return sb.toString()
     }
-    override fun clone(): Instruction = NewArrayInst(name.clone(), type, ops)
+    override fun clone(): Instruction = NewArrayInst(id, name.clone(), type, ops)
 }

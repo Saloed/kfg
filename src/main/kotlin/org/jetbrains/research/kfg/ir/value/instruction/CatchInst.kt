@@ -3,7 +3,7 @@ package org.jetbrains.research.kfg.ir.value.instruction
 import org.jetbrains.research.kfg.ir.value.Name
 import org.jetbrains.research.kfg.type.Type
 
-class CatchInst(name: Name, type: Type) : Instruction(name, type, arrayOf()) {
+class CatchInst(id: Int, name: Name, type: Type) : Instruction(id, name, type, arrayOf()) {
     override fun print() = "$name = catch ${type.name}"
-    override fun clone(): Instruction = CatchInst(name.clone(), type)
+    override fun clone(): Instruction = CatchInst(id, name.clone(), type)
 }

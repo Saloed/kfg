@@ -25,32 +25,32 @@ class CallInst : Instruction {
             else -> ops.drop(1)
         }
 
-    constructor(opcode: CallOpcode, method: Method, `class`: Class, args: Array<Value>)
-            : super(UndefinedName, method.returnType, args) {
+    constructor(id: Int, opcode: CallOpcode, method: Method, `class`: Class, args: Array<Value>)
+            : super(id, UndefinedName, method.returnType, args) {
         this.opcode = opcode
         this.method = method
         this.`class` = `class`
         this.isStatic = true
     }
 
-    constructor(opcode: CallOpcode, method: Method, `class`: Class, obj: Value, args: Array<Value>)
-            : super(UndefinedName, method.returnType, arrayOf(obj).plus(args)) {
+    constructor(id: Int, opcode: CallOpcode, method: Method, `class`: Class, obj: Value, args: Array<Value>)
+            : super(id, UndefinedName, method.returnType, arrayOf(obj).plus(args)) {
         this.opcode = opcode
         this.method = method
         this.`class` = `class`
         this.isStatic = false
     }
 
-    constructor(opcode: CallOpcode, name: Name, method: Method, `class`: Class, args: Array<Value>)
-            : super(name, method.returnType, args) {
+    constructor(id: Int, opcode: CallOpcode, name: Name, method: Method, `class`: Class, args: Array<Value>)
+            : super(id, name, method.returnType, args) {
         this.opcode = opcode
         this.method = method
         this.`class` = `class`
         this.isStatic = true
     }
 
-    constructor(opcode: CallOpcode, name: Name, method: Method, `class`: Class, obj: Value, args: Array<Value>)
-            : super(name, method.returnType, arrayOf(obj).plus(args)) {
+    constructor(id: Int, opcode: CallOpcode, name: Name, method: Method, `class`: Class, obj: Value, args: Array<Value>)
+            : super(id, name, method.returnType, arrayOf(obj).plus(args)) {
         this.opcode = opcode
         this.method = method
         this.`class` = `class`
@@ -71,7 +71,7 @@ class CallInst : Instruction {
     }
 
     override fun clone(): Instruction = when {
-        isStatic -> CallInst(opcode, name.clone(), method, `class`, args.toTypedArray())
-        else -> CallInst(opcode, name.clone(), method, `class`, callee, args.toTypedArray())
+        isStatic -> CallInst(id, opcode, name.clone(), method, `class`, args.toTypedArray())
+        else -> CallInst(id, opcode, name.clone(), method, `class`, callee, args.toTypedArray())
     }
 }

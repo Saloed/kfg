@@ -1,9 +1,9 @@
 package org.jetbrains.research.kfg.type
 
-import com.abdullin.kthelper.defaultHashCode
+import org.jetbrains.research.kthelper.defaultHashCode
 
 sealed class Integral : PrimaryType {
-    override val bitsize get() = Type.WORD
+    override val bitSize get() = Type.WORD
 
     abstract val width: Int
     abstract val signed: Boolean
@@ -74,7 +74,7 @@ object IntType : Integral() {
 }
 
 object LongType : Integral() {
-    override val bitsize = Type.DWORD
+    override val bitSize = Type.DWORD
     override val name = "long"
     override val width = 64
     override val signed = true

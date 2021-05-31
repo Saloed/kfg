@@ -6,17 +6,12 @@ import org.jetbrains.research.kfg.type.Type
 import org.jetbrains.research.kfg.type.parseDesc
 import org.objectweb.asm.tree.FieldNode
 
-class Field(cm: ClassManager, val fn: FieldNode, val `class`: Class) : Node(cm, fn.name, fn.access) {
+class Field(cm: ClassManager, val fn: FieldNode, val klass: Class) : Node(cm, fn.name, fn.access) {
     val type: Type = parseDesc(cm.type, fn.desc)
     val defaultValue: Value? = cm.value.getConstant(fn.value)
 
     override val asmDesc
         get() = type.asmDesc
-
-    init {
-        fn.visibleAnnotations?.apply { addVisibleAnnotations(this) }
-        fn.invisibleAnnotations?.apply { addInvisibleAnnotations(this) }
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -25,7 +20,7 @@ class Field(cm: ClassManager, val fn: FieldNode, val `class`: Class) : Node(cm, 
         other as Field
 
         if (fn != other.fn) return false
-        if (`class` != other.`class`) return false
+        if (klass != other.klass) return false
         if (type != other.type) return false
         if (defaultValue != other.defaultValue) return false
 
@@ -34,11 +29,11 @@ class Field(cm: ClassManager, val fn: FieldNode, val `class`: Class) : Node(cm, 
 
     override fun hashCode(): Int {
         var result = fn.hashCode()
-        result = 31 * result + `class`.hashCode()
+        result = 31 * result + klass.hashCode()
         result = 31 * result + type.hashCode()
         result = 31 * result + (defaultValue?.hashCode() ?: 0)
         return result
     }
 
-    override fun toString() = "${`class`.fullname}.$name: $type"
+    override fun toString() = "${klass.fullName}.$name: $type"
 }

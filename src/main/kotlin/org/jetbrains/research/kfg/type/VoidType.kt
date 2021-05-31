@@ -1,9 +1,9 @@
 package org.jetbrains.research.kfg.type
 
-import com.abdullin.kthelper.defaultHashCode
+import org.jetbrains.research.kthelper.defaultHashCode
 
 object VoidType : Type {
-    override val bitsize: Int
+    override val bitSize: Int
         get() = throw IllegalAccessError()
 
     override val name = "void"

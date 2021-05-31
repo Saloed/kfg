@@ -1,12 +1,12 @@
 package org.jetbrains.research.kfg.analysis
 
-import com.abdullin.kthelper.logging.log
 import org.jetbrains.research.kfg.ClassManager
 import org.jetbrains.research.kfg.ir.BasicBlock
 import org.jetbrains.research.kfg.ir.BodyBlock
 import org.jetbrains.research.kfg.ir.CatchBlock
 import org.jetbrains.research.kfg.ir.Method
 import org.jetbrains.research.kfg.ir.value.instruction.PhiInst
+import org.jetbrains.research.kthelper.logging.log
 
 class LoopSimplifier(override val cm: ClassManager) : LoopVisitor {
     private lateinit var current: Method
@@ -16,6 +16,7 @@ class LoopSimplifier(override val cm: ClassManager) : LoopVisitor {
     override fun cleanup() {}
 
     override fun visit(method: Method) {
+        if (!method.hasBody) return
         current = method
         super.visit(method)
         IRVerifier(cm).visit(method)
@@ -40,15 +41,13 @@ class LoopSimplifier(override val cm: ClassManager) : LoopVisitor {
     }
 
     private fun remapPhis(target: BasicBlock, from: Set<BasicBlock>, to: BasicBlock) {
-        target.instructions.mapNotNull { it as? PhiInst }.forEach { phi ->
+        for (phi in target.instructions.mapNotNull { it as? PhiInst }) {
             val fromIncomings = phi.incomings.filter { it.key in from }
             val fromValues = fromIncomings.values.toSet()
             val toValue = when (fromValues.size) {
                 1 -> fromValues.first()
-                else -> {
-                    val newPhi = instructions.getPhi(phi.type, fromIncomings)
-                    to += newPhi
-                    newPhi
+                else -> instructions.getPhi(phi.type, fromIncomings).also {
+                    to += it
                 }
             }
 
@@ -65,7 +64,7 @@ class LoopSimplifier(override val cm: ClassManager) : LoopVisitor {
         catch.addThrowers(listOf(new))
         new.addHandler(catch)
 
-        catch.mapNotNull { it as? PhiInst }.forEach { phi ->
+        for (phi in catch.mapNotNull { it as? PhiInst }) {
             val incomings = phi.incomings.toMutableMap()
             incomings[new] = incomings[original]!!
             val newPhi = instructions.getPhi(phi.type, incomings)

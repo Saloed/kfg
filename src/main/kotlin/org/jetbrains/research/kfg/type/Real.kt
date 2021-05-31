@@ -1,6 +1,6 @@
 package org.jetbrains.research.kfg.type
 
-import com.abdullin.kthelper.defaultHashCode
+import org.jetbrains.research.kthelper.defaultHashCode
 
 sealed class Real : PrimaryType {
     override val isPrimary get() = true
@@ -15,7 +15,7 @@ sealed class Real : PrimaryType {
 }
 
 object FloatType : Real() {
-    override val bitsize = Type.WORD
+    override val bitSize = Type.WORD
     override val name = "float"
     override val asmDesc = "F"
 
@@ -27,7 +27,7 @@ object FloatType : Real() {
 }
 
 object DoubleType : Real() {
-    override val bitsize = Type.DWORD
+    override val bitSize = Type.DWORD
     override val name = "double"
     override val isDWord = true
     override val asmDesc = "D"

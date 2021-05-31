@@ -1,13 +1,17 @@
 package org.jetbrains.research.kfg.ir.value.instruction
 
-import com.abdullin.kthelper.assert.asserted
 import org.jetbrains.research.kfg.ir.BasicBlock
 import org.jetbrains.research.kfg.ir.Location
 import org.jetbrains.research.kfg.ir.value.*
 import org.jetbrains.research.kfg.type.Type
+import org.jetbrains.research.kthelper.assert.asserted
 
-abstract class Instruction(val id: Int, name: Name, type: Type, protected val ops: Array<Value>)
-    : Value(name, type), ValueUser, Iterable<Value> {
+abstract class Instruction(
+    val id: Int,
+    name: Name,
+    type: Type,
+    protected val ops: Array<Value>
+) : Value(name, type), ValueUser, Iterable<Value> {
 
     internal var parentUnsafe: BasicBlock? = null
     var location = Location()
@@ -30,12 +34,12 @@ abstract class Instruction(val id: Int, name: Name, type: Type, protected val op
 
     override fun replaceUsesOf(from: UsableValue, to: UsableValue) {
         ops.indices
-                .filter { ops[it] == from }
-                .forEach {
-                    ops[it].removeUser(this)
-                    ops[it] = to.get()
-                    to.addUser(this)
-                }
+            .filter { ops[it] == from }
+            .forEach {
+                ops[it].removeUser(this)
+                ops[it] = to.get()
+                to.addUser(this)
+            }
     }
 
     protected abstract fun clone(): Instruction
@@ -57,8 +61,13 @@ abstract class Instruction(val id: Int, name: Name, type: Type, protected val op
     override fun hashCode(): Int = id
 }
 
-abstract class TerminateInst(id: Int, name: Name, type: Type, operands: Array<Value>, protected val succs: Array<BasicBlock>) :
-        Instruction(id, name, type, operands), BlockUser {
+abstract class TerminateInst(
+    id: Int,
+    name: Name,
+    type: Type,
+    operands: Array<Value>,
+    protected val succs: Array<BasicBlock>
+) : Instruction(id, name, type, operands), BlockUser {
 
     val successors: List<BasicBlock>
         get() = succs.toList()
@@ -71,11 +80,11 @@ abstract class TerminateInst(id: Int, name: Name, type: Type, operands: Array<Va
 
     override fun replaceUsesOf(from: UsableBlock, to: UsableBlock) {
         succs.indices
-                .filter { succs[it] == from }
-                .forEach {
-                    succs[it].removeUser(this)
-                    succs[it] = to.get()
-                    to.addUser(this)
-                }
+            .filter { succs[it] == from }
+            .forEach {
+                succs[it].removeUser(this)
+                succs[it] = to.get()
+                to.addUser(this)
+            }
     }
 }

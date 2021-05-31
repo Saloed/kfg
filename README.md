@@ -1,5 +1,4 @@
 # KFG
-[![](https://jitpack.io/v/vorpal-research/kfg.svg)](https://jitpack.io/#vorpal-research/kfg)
 
 Library for building control flow graph from Java bytecode.
 
@@ -17,11 +16,22 @@ mvn clean verify
 
 # Download
 
-The latest release of the KFG is available at vorpal-research bintray repository:
+The latest release of the KFG is available through [Vorpal GitHub Packages repository](https://github.com/orgs/vorpal-research/packages).
+To have access to the repository, you should be [authenticated to GitHub Packages](https://docs.github.com/en/packages/guides/configuring-apache-maven-for-use-with-github-packages#authenticating-to-github-packages)
+with following configuration:
+```xml
+<server>
+  <id>github-vorpal-research-kotlin-maven</id>
+  <username>USERNAME</username>
+  <password>TOKEN</password>
+</server>
+``` 
+
+Add the link to the repository to your `pom.xml`:
 ```xml
 <repository>
-    <id>bintray-vorpal-research-kotlin-maven</id>
-    <url>https://dl.bintray.com/vorpal-research/kotlin-maven</url>
+    <id>github-vorpal-research-kotlin-maven</id>
+    <url>https://maven.pkg.github.com/vorpal-research/kotlin-maven</url>
 </repository>
 ```
 

@@ -1,9 +1,9 @@
 package org.jetbrains.research.kfg.ir.value.instruction
 
-import org.jetbrains.research.kfg.InvalidAccessError
+import org.jetbrains.research.kfg.ir.Field
 import org.jetbrains.research.kfg.ir.value.UndefinedName
 import org.jetbrains.research.kfg.ir.value.Value
-import org.jetbrains.research.kfg.ir.Field
+import org.jetbrains.research.kthelper.assert.asserted
 
 class FieldStoreInst : Instruction {
     val field: Field
@@ -25,10 +25,7 @@ class FieldStoreInst : Instruction {
         get() = !isStatic
 
     val owner: Value
-        get() = when {
-            hasOwner -> ops[0]
-            else -> throw InvalidAccessError("Trying to get owner of static field")
-        }
+        get() = asserted(hasOwner) { ops[0] }
 
     val value: Value
         get() = if (hasOwner) ops[1] else ops[0]
@@ -36,7 +33,7 @@ class FieldStoreInst : Instruction {
     override fun print(): String {
         val sb = StringBuilder()
         if (hasOwner) sb.append("$owner.")
-        else sb.append("${field.`class`.name}.")
+        else sb.append("${field.klass.name}.")
         sb.append("${field.name} = $value")
         return sb.toString()
     }
